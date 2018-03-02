@@ -47,8 +47,7 @@ __CONFIG _CONFIG2, _BORSEN_0 & _IESO_OFF & _FCMEN_OFF
 	movf PORTE,W ;(hopefully) moves values in port E to register W
 	movwf modeComf
 	comf modeComf, mode
-	if mode==B'11011111'
-	end
+	
 
     Mode1RedPress ;activate solenoid on red press
 	btfss PORTC,1 ; see if red button pressed

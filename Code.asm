@@ -9,7 +9,9 @@ __CONFIG _CONFIG2, _BORSEN_0 & _IESO_OFF & _FCMEN_OFF
 ;Variable Declarations
 	
 	mode equ 20h
-	modeComf equ 21h
+	modeInput equ 21h
+	modeAll equ 22h
+	porteComf equ 23h
 	
 	org 00h
 	goto initPort
@@ -45,12 +47,64 @@ __CONFIG _CONFIG2, _BORSEN_0 & _IESO_OFF & _FCMEN_OFF
     
     GreenPress ;read in switch, go to correct mode
 	movf PORTE,W ;(hopefully) moves values in port E to register W
-	movwf modeComf
-	comf modeComf, mode
+	movwf PorteComf
+	comf PorteComf, modeAll ; Complement the input from Port E
+	movlw B'00000111'
+	andlw modeAll ; Clear the higher bits of input
+	movwf modeInput ; Move the input of octal switch into the modeInput register
 	
+	btfsc modeInput,2
+	goto Bit2Set
+	goto Bit2Clear
+	
+    Bit2Set ; if the input bit 2 is set
+	btfsc modeInput,1
+	goto SetError
+	btfsc modeInput,0
+	goto SetError
+	goto SetMode4
 
-    Mode1RedPress ;activate solenoid on red press
+    Bit2Clear ; if the input bit 2 is clear
+	btfsc modeInput,1 
+	goto Mode2or3
+	goto Mode1orE
+
+    Mode2or3 ; Test if the mode is 2 or 3
+	btfsc modeInput,0
+	goto SetMode3
+	goto SetMode2
+
+    Mode1orE ; Test if the mode is 1 or Error
+	btfsc modeInput,0
+	goto SetMode1
+	goto SetError
+	
+    SetError ; Set the mode to be error
+	movlw B'00000001'
+	movwf mode
+
+    SetMode4 ; Set the mode to be 4
+	movlw B'00010000'
+	movwf mode
+	call WaitRedPress
+
+    SetMode3 ; Set the mode to be 3
+	movlw B'00001000'
+	movwf mode
+	call WaitRedPress
+	
+    SetMode2 ; Set the mode to be 2
+	movlw B'00000100'
+	movwf mode
+	call WaitRedPress
+
+    SetMode1 ; Set the mode to be 1
+	movlw B'00000010'
+	movwf mode
+	call WaitRedPress
+	
+    WaitRedPress ;activate solenoid on red press
 	btfss PORTC,1 ; see if red button pressed
-	goto Mode1RedPress
+	goto WaitRedPress
 	; actual response for solenoid
     

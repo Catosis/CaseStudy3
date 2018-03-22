@@ -47,8 +47,8 @@ __CONFIG _CONFIG2, _BORSEN_0 & _IESO_OFF & _FCMEN_OFF
     
     GreenPress ;read in switch, go to correct mode
 	movf PORTE,W ;(hopefully) moves values in port E to register W
-	movwf PorteComf
-	comf PorteComf, modeAll ; Complement the input from Port E
+	movwf porteComf
+	comf porteComf, modeAll ; Complement the input from Port E
 	movlw B'00000111'
 	andlw modeAll ; Clear the higher bits of input
 	movwf modeInput ; Move the input of octal switch into the modeInput register
@@ -107,4 +107,8 @@ __CONFIG _CONFIG2, _BORSEN_0 & _IESO_OFF & _FCMEN_OFF
 	btfss PORTC,1 ; see if red button pressed
 	goto WaitRedPress
 	; actual response for solenoid
+
+	isrService
+	goto isrService
     
+	end

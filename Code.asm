@@ -29,15 +29,24 @@ __CONFIG _CONFIG2, _BORSEN_0 & _IESO_OFF & _FCMEN_OFF
 	clrf PORTC	; Clear Port C input latches (red = 1, green = 0)
 	clrf PORTB	; LED lights
 	clrf PORTD	; Clear Port D Solenoid output latches + sensor output
+	bcf STATUS,RP1
 	bsf STATUS,RP0 ; Set bit in STATUS register for bank 1
 	movlw B'11111111' ; move hex value FF into W register (maybe no need)
 	movwf TRISE ; Configure Port E as all inputs
 	movwf TRISC ; Configure port C as all inputs
-	movlw B'00111111' ; move hex value FF into W register (maybe no need)
+	movlw B'11111100' ; move hex value FC into W register (maybe no need)
 	movwf TRISD ; Configure D for input and output
-	clrf  TRISB ; Config B as all outputs
+	movlw B'11110000' ; move hex value FF into W register (maybe no need)
+	movwf TRISB ; Config B as all outputs
+	movlw B'00001110' ; move hex value 0E into W register
+	movwf ADCON1 ; Config the pins of Port B to be digital and pin Port A 0 to be analog
 	
 	bcf STATUS,RP0 ; Clear bit in STATUS register for bank 0
+	clrf  PORTB ; Set the LED to be '0000' at first
+
+;%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+;
+; Mode Selector
 	
     waitPress ;sees if green button is pressed, goto Green Press
 	btfsc PORTC,0 ; see if green button pressed
@@ -81,28 +90,59 @@ __CONFIG _CONFIG2, _BORSEN_0 & _IESO_OFF & _FCMEN_OFF
     SetError ; Set the mode to be error
 	movlw B'00000001'
 	movwf mode
-
-    SetMode4 ; Set the mode to be 4
-	movlw B'00010000'
-	movwf mode
-	call WaitRedPress
-
-    SetMode3 ; Set the mode to be 3
-	movlw B'00001000'
-	movwf mode
-	call WaitRedPress
-	
-    SetMode2 ; Set the mode to be 2
-	movlw B'00000100'
-	movwf mode
-	call WaitRedPress
+	bsf PORTB, 3; Set the highest LED to be 1
+	btfsc modeInput, 2
+	bsf PORTB, 2
+	btfsc modeInput, 1
+	bsf PORTB, 1
+	btfsc modeInput, 0
+	bsf PORTB, 0
+ 	goto ModeError
 
     SetMode1 ; Set the mode to be 1
 	movlw B'00000010'
 	movwf mode
-	call WaitRedPress
+	movlw B'00000001'
+	movwf PORTB
+	goto Mode1
 	
+	SetMode2 ; Set the mode to be 2
+	movlw B'00000100'
+	movwf mode
+	movlw B'00000010'
+	movwf PORTB
+	goto Mode2
+
+	SetMode3 ; Set the mode to be 3
+	movlw B'00001000'
+	movwf mode
+	movlw B'00000011'
+	movwf PORTB
+	goto Mode3
+
+    SetMode4 ; Set the mode to be 4
+	movlw B'00010000'
+	movwf mode
+	movlw B'00000100'
+	movwf PORTB
+	goto Mode4
+
+;%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+;
+; Working Mode
+
+	Mode1 ; Working Mode 1
+
+	Mode2 ; Working Mode 2
+
+	Mode3 ; Working Mode 3
+
+	Mode4 ; Working Mode 4
+
+	ModeError; Error Mode
+
     WaitRedPress ;activate solenoid on red press
+
 	btfss PORTC,1 ; see if red button pressed
 	goto WaitRedPress
 	; actual response for solenoid

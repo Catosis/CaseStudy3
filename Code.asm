@@ -10,8 +10,7 @@ __CONFIG _CONFIG2, _BORSEN_0 & _IESO_OFF & _FCMEN_OFF
 	
 	mode equ 20h
 	modeInput equ 21h
-	modeAll equ 22h
-	porteComf equ 23h
+	porteComf equ 22h
 	
 	org 00h
 	goto initPort
@@ -48,9 +47,9 @@ __CONFIG _CONFIG2, _BORSEN_0 & _IESO_OFF & _FCMEN_OFF
     GreenPress ;read in switch, go to correct mode
 	movf PORTE,W ;(hopefully) moves values in port E to register W
 	movwf porteComf
-	comf porteComf, modeAll ; Complement the input from Port E
+	comf porteComf, 1 ; Complement the input from Port E
 	movlw B'00000111'
-	andlw modeAll ; Clear the higher bits of input
+ 	andwf porteComf, 0 ; Clear the higher bits of input
 	movwf modeInput ; Move the input of octal switch into the modeInput register
 	
 	btfsc modeInput,2

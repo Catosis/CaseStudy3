@@ -192,13 +192,13 @@ __CONFIG _CONFIG2, _BORSEN_0 & _IESO_OFF & _FCMEN_OFF
 		bcf STATUS, RP0
 		movlw B'01000001'
 		movwf ADCON0 ; move special function A/D register
-		bsf ADCON0, GO
-
+		
 		call WaitRedPress
 
 	ResetRed ; Come to here when hit the red button during the timer
 		call WaitRedRelease
 
+		bsf ADCON0, GO ; Start the A/D Converter
 		call WaitConversion
 		bcf STATUS, C
 		rrf W, 0 ; move one bits left
@@ -207,16 +207,23 @@ __CONFIG _CONFIG2, _BORSEN_0 & _IESO_OFF & _FCMEN_OFF
 		movwf Seconds ; Store the time from the control pot
 
 		xorlw B'00000000'
-		btfsc STATUS, Z
-		goto SetError
+		btfsc STATUS, Z ; Check if the time is zero
+		goto SetError ; Go to Error mode if the time is set to be zero
 		call MainOn
 
 	Timer ; The timer for total time
 		decfsz Seconds, F
+		call LoopTimer
+
+		call MainOff ; Turn off the main transistor after the timer is over
+		goto Mode2 ; Go back to the beginning of Mode 2
+
+	LoopTimer
 		call Timer1s
 		goto Timer
+		return
 
-	WaitConversion
+	WaitConversion ; Wait for the A/D Conversion done
 		btfsc ADCON0, GO
 		goto WaitConversion
 		movf ADRESH, W
@@ -232,13 +239,17 @@ __CONFIG _CONFIG2, _BORSEN_0 & _IESO_OFF & _FCMEN_OFF
 
 	Delay 
 		decfsz Timer0, F
-		
 		goto Delay
 		decfsz Timer1, F
 		goto Delay
 		decfsz Timer2, F
-		goto Delay
+		goto RedCheck
 		return 
+
+	RedCheck ; Check if the red button is pressed during the timer
+		btfsc PORTC, 1
+		goto ResetRed ; Restart the timer when red button pressed
+		goto Delay ; Continue timer when red button do nothing
 
 ;%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ;
